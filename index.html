@@ -9,35 +9,65 @@
 <body>
   <div id="app">
       <input type="text" id="a">
-      <span id="b"></span>
+      {{text}}
   </div>
   
   <script>
-    var obj = {};
-    Object.defineProperty(obj, 'hello', {
-      set: function (newVal) {
-        document.getElementById('a').value = newVal;
-        document.getElementById('b').innerHTML = newVal;
+    // 编译的过程就是将Vue实例中的data字段与DOM结构联系起来
+    function compile (node, vm) {
+      var reg = /\{\{(.*)\}\}/;
+      // 对遍历的子节点类型进行判断,如果是元素的话，要对元素判断是否存在v-model这个属性
+      if (node.nodeType === 1) {
+        var attr = node.attributes;
+        for (let i = 0; i < attr.length; i++) {
+          if (attr[i].nodeName === 'v-model') {
+            // 如果找到v-model属性，那么就获取这个属性节点的值，然后找到vm的data字段中对应的键的值，赋给该节点的value值
+            var name = attr[i].nodeValue;
+            node.value = vm.data[name];
+            // 移除节点属性
+            node.removeAttribute('v-model');
+          }
+        }
       }
-    })
-    document.getElementById('a').addEventListener('keyup', function(e){
-      obj.hello = e.target.value;
-    })
+      // 如果是文本节点，就要判断有无双大括号语法，提取里面的内容
+      if (node.nodeType === 3) {
+        // 判断是否匹配正则表达式
+        if (reg.test(node.nodeValue)) {
+          //匹配需要对括号内容提取
+          var name = RegExp.$1;
+          name = name.trim();
+          node.nodeValue = vm.data[name];
+        }
+      }
+    }
 
-    function nodeToFragment (node) {
+
+    function nodeToFragment (node, vm) {
       var frag = document.createDocumentFragment();
       var child;
       while (child = node.firstChild) {
+        console.log(2)
+        // 对所有子节点进行编译
+        compile(child, vm);
         frag.appendChild(child);
       }
       return frag;
     }
 
-    var dom = nodeToFragment(document.getElementById('app'))
+    function Vue (options) {
+      this.data = options.data;
+      var id = options.el;
+      var dom = nodeToFragment(document.getElementById(id), this);
+      // 编译完成，返回DOM到app中
+      document.getElementById(id).appendChild(dom);
+    }
 
-    console.log(dom);
-
-    document.getElementById('app').appendChild(dom)
+    var vm = new Vue({
+      el: 'app',
+      data: {
+        text: 'hello worsld'
+      }
+    });
   </script>
 </body>
 </html>

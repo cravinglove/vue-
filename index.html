@@ -7,8 +7,11 @@
   <title>双向绑定</title>
 </head>
 <body>
-  <input type="text" id="a">
-  <span id="b"></span>
+  <div id="app">
+      <input type="text" id="a">
+      <span id="b"></span>
+  </div>
+  
   <script>
     var obj = {};
     Object.defineProperty(obj, 'hello', {
@@ -20,6 +23,21 @@
     document.getElementById('a').addEventListener('keyup', function(e){
       obj.hello = e.target.value;
     })
+
+    function nodeToFragment (node) {
+      var frag = document.createDocumentFragment();
+      var child;
+      while (child = node.firstChild) {
+        frag.appendChild(child);
+      }
+      return frag;
+    }
+
+    var dom = nodeToFragment(document.getElementById('app'))
+
+    console.log(dom);
+
+    document.getElementById('app').appendChild(dom)
   </script>
 </body>
 </html>
